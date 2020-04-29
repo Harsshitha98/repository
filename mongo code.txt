@@ -1,0 +1,222 @@
+
+PACKAGE: com.example.demo.MongoDb
+Class:DemoMongoDbApplication
+
+package com.example.demoMongoDb;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+
+@SpringBootApplication
+public class DemoMongoDbApplication {
+	public static void main(String[] args) {
+		SpringApplication.run(DemoMongoDbApplication.class, args);
+	}
+    MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
+}
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+PACKAGE:com.example.demoMongoDb.controller
+Class:PersonController
+
+
+
+package com.example.demoMongoDb.controller;
+
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demoMongoDb.model.Person;
+import com.example.demoMongoDb.service.PersonService;
+
+
+@RestController
+public class PersonController {
+
+	@Autowired
+	private PersonService personService;
+	
+	@RequestMapping("/create")
+	public String create(@RequestParam String firstName, @RequestParam String lastName, @RequestParam int age) {
+		Person p = personService.create(firstName, lastName, age);
+		return p.toString();
+	}
+	
+	@RequestMapping("/get")
+	public Person getPerson(@RequestParam String firstName) {
+		return personService.getByFirstName(firstName);
+	}
+	@RequestMapping("/getAll")
+	public List<Person> getAll(){
+		return personService.getAll();
+	}
+	@RequestMapping("/update")
+	public String update(@RequestParam String firstName, @RequestParam String lastName, @RequestParam int age) {
+		Person p = personService.update(firstName, lastName, age);
+		return p.toString();
+	}
+	@RequestMapping("/delete")
+	public String delete(@RequestParam String firstName) {
+		personService.delete(firstName);
+		return "Deleted "+firstName;
+	}
+	@RequestMapping ("/deleteAll")
+	public String deleteAll() {
+		personService.deleteAll();
+		return "Deleted all records";
+	}
+	
+}
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+PACKAGE:com.example.demoMongoDb.model
+Class:Person
+
+
+package com.example.demoMongoDb.model;
+
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Document
+public class Person {
+	@Id
+	String id;
+	String firstName;
+	String lastName;
+	int    age;
+	
+	public Person(String firstName, String lastName, int age) {
+		this.firstName = firstName;
+		this.lastName  = lastName;
+		this.age       = age;
+		
+	}
+
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+
+	public int getAge() {
+		return age;
+	}
+
+	public void setAge(int age) {
+		this.age = age;
+	}
+	
+	public String toString() {
+		return "Person First Name:"+firstName+" Last Name:"+lastName+" age:"+age;
+	}
+}
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Package: com.example.demoMongoDb.repository
+Interface (We have to create interface)
+package com.example.demoMongoDb.repository;
+
+
+import java.util.List;
+
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
+
+import com.example.demoMongoDb.model.Person;
+
+
+@Repository
+public interface PersonRepository extends MongoRepository<Person, String>{
+   public Person findByFirstName(String lastName);
+   public Person findByLastName(String lastName);
+   public List<Person> findByAge(int age);
+}
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Package:com.example.demoMongoDb.service
+Class:PersonService
+
+
+
+package com.example.demoMongoDb.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.example.demoMongoDb.model.Person;
+import com.example.demoMongoDb.repository.PersonRepository;
+
+
+@Service
+public class PersonService {
+   
+	@Autowired
+	private PersonRepository personRepository;
+	
+	
+	//Create operation
+	public Person create(String firstName,String lastName, int age) {
+		return personRepository.save(new Person(firstName, lastName, age));
+	}
+	//Retrieve operation
+	public List<Person> getAll(){
+		return personRepository.findAll();
+	}
+	public Person getByFirstName(String firstName) {
+		return personRepository.findByFirstName(firstName);
+	}
+	public Person getByLastName(String lastName) {
+		return personRepository.findByLastName(lastName);
+	}
+	//Update operation
+	public Person update(String firstName, String lastName, int age) {
+		Person p = personRepository.findByFirstName(firstName);
+		p.setLastName(lastName);
+		p.setAge(age);
+		return personRepository.save(p);
+	}
+	//Delete operation
+	public void deleteAll() {
+		personRepository.deleteAll();
+	}
+	public void delete(String firstName) {
+		Person p = personRepository.findByFirstName(firstName);
+		personRepository.delete(p);
+	}
+	
+
+}
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+src/main/resources/applicationproperties
+
+
+
+spring.data.mongodb.uri=mongodb://localhost:27017/test
+#spring.data.mongodb.uri=mongodb://username:password@host:port/database
+
+
